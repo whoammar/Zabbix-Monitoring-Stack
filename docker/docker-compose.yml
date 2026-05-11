@@ -1,0 +1,103 @@
+version: '3.8'
+
+networks:
+  zabbix-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  zabbix-server-data:
+  grafana-data:
+
+services:
+
+  # ─────────────────────────────────────────
+  # PostgreSQL Database
+  # ─────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: zabbix-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: zabbix
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbix_pass
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - zabbix-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zabbix -d zabbix"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────
+  # Zabbix Server
+  # ─────────────────────────────────────────
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:alpine-6.4-latest
+    container_name: zabbix-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_SERVER_HOST: postgres
+      POSTGRES_DB: zabbix
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbix_pass
+      ZBX_STARTPOLLERSUNREACHABLE: 2
+      ZBX_STARTPINGERS: 1
+      ZBX_STARTTRAPPERS: 5
+      ZBX_STARTDISCOVERERS: 1
+    volumes:
+      - zabbix-server-data:/var/lib/zabbix
+    ports:
+      - "10051:10051"   # Zabbix trapper port (agents connect here)
+    networks:
+      - zabbix-net
+
+  # ─────────────────────────────────────────
+  # Zabbix Web UI (Nginx + PHP-FPM)
+  # ─────────────────────────────────────────
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-6.4-latest
+    container_name: zabbix-web
+    restart: unless-stopped
+    depends_on:
+      - zabbix-server
+      - postgres
+    environment:
+      ZBX_SERVER_HOST: zabbix-server
+      ZBX_SERVER_PORT: 10051
+      DB_SERVER_HOST: postgres
+      POSTGRES_DB: zabbix
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbix_pass
+      PHP_TZ: Asia/Karachi
+    ports:
+      - "80:8080"       # Zabbix Web UI
+    networks:
+      - zabbix-net
+
+  # ─────────────────────────────────────────
+  # Grafana (connects to Zabbix DB)
+  # ─────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: zabbix-grafana
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - zabbix-server
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+      GF_INSTALL_PLUGINS: alexanderzobnin-zabbix-app
+    volumes:
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"     # Grafana Dashboard
+    networks:
+      - zabbix-net
