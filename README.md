@@ -1,3 +1,7 @@
+Here is the clean README content — copy everything between the lines:
+
+---
+
 ```markdown
 # 🔍 Zabbix Monitoring Stack
 
@@ -13,67 +17,36 @@ Zabbix-Monitoring-Stack/
 ├── .gitignore
 ├── README.md
 ├── docker/
-│   └── docker-compose.yml        # Zabbix Server + Web + PostgreSQL + Grafana
+│   └── docker-compose.yml
 └── terraform/
-    ├── main.tf                   # Calls VPC + EC2 modules
-    ├── variables.tf              # Variable declarations
-    ├── terraform.tfvars          # Your actual values (gitignored)
-    ├── terraform.tfvars.example  # Safe placeholder for version control
-    ├── outputs.tf                # EC2 IP, URLs, SSH command
-    └── script.sh                 # EC2 user-data bootstrap script
-```
-
----
-
-## 🏗️ Architecture Overview
-
-```
-                        ┌─────────────────────────────────┐
-                        │         AWS (us-east-1)          │
-                        │                                  │
-                        │  ┌──────────────────────────┐   │
-                        │  │     VPC 10.0.0.0/16      │   │
-                        │  │                          │   │
-                        │  │  ┌────────────────────┐  │   │
-                        │  │  │   Public Subnet     │  │   │
-                        │  │  │   10.0.1.0/24       │  │   │
-                        │  │  │                    │  │   │
-                        │  │  │  ┌──────────────┐  │  │   │
-                        │  │  │  │  EC2 t3.med  │  │  │   │
-                        │  │  │  │              │  │  │   │
-                        │  │  │  │ [Zabbix Srv] │  │  │   │
-                        │  │  │  │ [Zabbix Web] │  │  │   │
-                        │  │  │  │ [PostgreSQL] │  │  │   │
-                        │  │  │  │ [Grafana]    │  │  │   │
-                        │  │  │  └──────────────┘  │  │   │
-                        │  │  └────────────────────┘  │   │
-                        │  └──────────────────────────┘   │
-                        └─────────────────────────────────┘
-                                        ↑
-                              Zabbix Agents (port 10051)
-                              installed on target servers
+    ├── main.tf
+    ├── variables.tf
+    ├── terraform.tfvars
+    ├── terraform.tfvars.example
+    ├── outputs.tf
+    └── script.sh
 ```
 
 ---
 
 ## 🚀 How It Works
 
-1. **Terraform** provisions a VPC, subnets, security groups, and an EC2 instance on AWS
-2. **`script.sh`** runs automatically as EC2 user-data on first boot
+1. **Terraform** provisions VPC, subnets, security groups, and EC2 on AWS
+2. **script.sh** runs automatically on EC2 first boot as user-data
 3. **script.sh** installs Docker → clones this repo → runs `docker compose up -d`
 4. **Docker Compose** spins up 4 containers: Zabbix Server, Zabbix Web, PostgreSQL, Grafana
-5. **Zabbix Agents** on target servers connect back to the Zabbix Server on port `10051`
+5. **Zabbix Agents** on target servers connect back to Zabbix Server on port `10051`
 
 ---
 
 ## 🐳 Docker Services
 
-| Container | Image | Port | Purpose |
-|---|---|---|---|
-| `zabbix-postgres` | postgres:15-alpine | 5432 | Database |
-| `zabbix-server` | zabbix-server-pgsql:6.4 | 10051 | Core monitoring server |
-| `zabbix-web` | zabbix-web-nginx-pgsql:6.4 | 80 | Web UI |
-| `zabbix-grafana` | grafana/grafana:latest | 3000 | Dashboards |
+| Container | Port | Purpose |
+|---|---|---|
+| `zabbix-postgres` | 5432 | Database |
+| `zabbix-server` | 10051 | Core monitoring server |
+| `zabbix-web` | 80 | Web UI |
+| `zabbix-grafana` | 3000 | Dashboards |
 
 ---
 
@@ -92,71 +65,57 @@ Zabbix-Monitoring-Stack/
 
 - AWS account with programmatic access configured (`aws configure`)
 - Terraform >= 1.3
-- An AWS Key Pair (set `key_name` in `terraform.tfvars`)
+- AWS Key Pair created in your region
 - Git
 
 ---
 
 ## ⚙️ Deployment
 
-### 1. Clone the repo
-
+**1. Clone the repo**
 ```bash
 git clone https://github.com/whoammar/Zabbix-Monitoring-Stack.git
 cd Zabbix-Monitoring-Stack/terraform
 ```
 
-### 2. Create your tfvars
-
+**2. Create your tfvars**
 ```bash
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-Edit `terraform.tfvars` with your values:
+Edit `terraform.tfvars` with your values — region, AMI, key pair name, your IP.
 
-```hcl
-aws_region    = "us-east-1"
-key_name      = "your-keypair-name"
-ami_id        = "ami-xxxxxxxxxxxxxxxxx"
-instance_type = "t3.medium"
-```
-
-### 3. Deploy
-
+**3. Deploy**
 ```bash
 terraform init
 terraform plan
 terraform apply
 ```
 
-### 4. Access
+**4. Access**
 
-After apply completes, wait **3–4 minutes** for Docker to pull images and start, then:
-
+Wait 3–4 minutes after apply for Docker to pull images, then open:
 ```
 Zabbix Web  →  http://<EC2_PUBLIC_IP>:80
 Grafana     →  http://<EC2_PUBLIC_IP>:3000
 ```
 
-Terraform will print the exact URLs in the output.
-
-### 5. SSH into EC2
-
+**5. SSH**
 ```bash
 ssh -i your-keypair.pem ubuntu@<EC2_PUBLIC_IP>
 ```
 
 ---
 
-## 🔒 Security Group — Open Ports
+## 🔒 Security Group Ports
 
-| Port | Protocol | Source | Purpose |
-|---|---|---|---|
-| `22` | TCP | Your IP only | SSH access |
-| `80` | TCP | 0.0.0.0/0 | Zabbix Web UI |
-| `443` | TCP | 0.0.0.0/0 | HTTPS |
-| `3000` | TCP | 0.0.0.0/0 | Grafana |
-| `10051` | TCP | 0.0.0.0/0 | Zabbix agent trap port |
+| Port | Source | Purpose |
+|---|---|---|
+| `22` | Your IP only | SSH |
+| `80` | 0.0.0.0/0 | Zabbix Web UI |
+| `443` | 0.0.0.0/0 | HTTPS |
+| `3000` | 0.0.0.0/0 | Grafana |
+| `10051` | 0.0.0.0/0 | Zabbix agent trap port |
 
 ---
 
@@ -165,12 +124,10 @@ ssh -i your-keypair.pem ubuntu@<EC2_PUBLIC_IP>
 Install Zabbix Agent on any server you want to monitor:
 
 ```bash
-# Ubuntu/Debian
 wget https://repo.zabbix.com/zabbix/6.4/ubuntu/pool/main/z/zabbix-release/zabbix-release_6.4-1+ubuntu22.04_all.deb
 dpkg -i zabbix-release_6.4-1+ubuntu22.04_all.deb
 apt update && apt install zabbix-agent -y
 
-# Configure it to point to your Zabbix Server
 sed -i 's/Server=127.0.0.1/Server=<ZABBIX_EC2_IP>/' /etc/zabbix/zabbix_agentd.conf
 sed -i 's/ServerActive=127.0.0.1/ServerActive=<ZABBIX_EC2_IP>/' /etc/zabbix/zabbix_agentd.conf
 
@@ -191,39 +148,12 @@ Configuration → Hosts → Create Host → enter IP → assign template → Sav
 terraform destroy
 ```
 
-This will remove all AWS resources — EC2, VPC, subnets, security groups.
-
----
-
-## 📦 Terraform Outputs
-
-| Output | Description |
-|---|---|
-| `zabbix_public_ip` | Public IP of the monitoring EC2 |
-| `zabbix_web_url` | Direct URL to Zabbix Web UI |
-| `grafana_url` | Direct URL to Grafana |
-| `vpc_id` | VPC ID |
-| `public_subnet_ids` | Public subnet IDs |
-| `ssh_command` | Ready-to-use SSH command |
-
----
-
-## 🗂️ Reusable Modules Used
-
-This project consumes shared modules from the parent `modules/` directory:
-
-- **`modules/vpc`** — VPC, subnets, IGW, route tables, security groups
-- **`modules/ec2`** — EC2 instance, IAM SSM role, key pair, user-data
-
 ---
 
 ## 📝 Notes
 
 - `terraform.tfvars` is gitignored — never commit real credentials
-- Use `terraform.tfvars.example` as a template for new environments
-- Timezone in Zabbix Web is set to `Asia/Karachi` — change in `docker-compose.yml` if needed
-- Grafana comes with `alexanderzobnin-zabbix-app` plugin pre-installed
-```
-
----
+- Use `terraform.tfvars.example` as a safe template to commit
+- Timezone is set to `Asia/Karachi` — change in `docker-compose.yml` if needed
+- Grafana has `alexanderzobnin-zabbix-app` plugin pre-installed
 ```
