@@ -1,7 +1,3 @@
-Here is the clean README content — copy everything between the lines:
-
----
-
 ```markdown
 # 🔍 Zabbix Monitoring Stack
 
