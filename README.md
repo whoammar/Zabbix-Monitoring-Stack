@@ -38,7 +38,7 @@ Zabbix-Monitoring-Stack/
 ## 🐳 Docker Services
 
 | Container | Port | Purpose |
-|---|---|---|
+|-----------|------|---------|
 | `zabbix-postgres` | 5432 | Database |
 | `zabbix-server` | 10051 | Core monitoring server |
 | `zabbix-web` | 80 | Web UI |
@@ -49,7 +49,7 @@ Zabbix-Monitoring-Stack/
 ## 🔐 Default Credentials
 
 | Service | URL | Username | Password |
-|---|---|---|---|
+|---------|-----|----------|----------|
 | Zabbix Web | `http://<EC2_IP>:80` | `Admin` | `zabbix` |
 | Grafana | `http://<EC2_IP>:3000` | `admin` | `admin123` |
 
@@ -106,7 +106,7 @@ ssh -i your-keypair.pem ubuntu@<EC2_PUBLIC_IP>
 ## 🔒 Security Group Ports
 
 | Port | Source | Purpose |
-|---|---|---|
+|------|--------|---------|
 | `22` | Your IP only | SSH |
 | `80` | 0.0.0.0/0 | Zabbix Web UI |
 | `443` | 0.0.0.0/0 | HTTPS |
@@ -152,4 +152,20 @@ terraform destroy
 - Use `terraform.tfvars.example` as a safe template to commit
 - Timezone is set to `Asia/Karachi` — change in `docker-compose.yml` if needed
 - Grafana has `alexanderzobnin-zabbix-app` plugin pre-installed
+```
+
+---
+
+### What to do now:
+
+1. **Open** `~/Desktop/Terraform Modules Final/Zabbix-Monitoring-Stack/README.md` in VS Code  
+2. **Delete** everything inside and paste the above block  
+3. **Save** the file  
+4. Run these commands in your terminal:
+
+```bash
+cd ~/Desktop/Terraform\ Modules\ Final/Zabbix-Monitoring-Stack
+git add README.md
+git commit -m "Fix markdown formatting for GitHub"
+git push -u origin main --force
 ```
